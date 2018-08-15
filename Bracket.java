@@ -1,22 +1,38 @@
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.PrintStream;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Bracket  {
-	public static Node root;
-	public ArrayList<Node> nodes = new ArrayList<Node>(); 
-	public Map<String, Double> ratingLookup = new HashMap<String, Double>();
-	public double standardDev;
+import org.apache.commons.lang3.StringUtils;
 
+public class Bracket  {
+	private static Node root;
+	private ArrayList<Node> nodes = new ArrayList<Node>(); 
+	private Map<String, Double> ratingLookup = new HashMap<String, Double>();
+	private Map<Integer, String> firstRound;
+	private double standardDev;
+	private ArrayList<String> nameSearch;
+	
 	public Bracket() throws FileNotFoundException {
+		Data createFile = new Data();
+		Ranking createRanking = new Ranking();
+		
+		nameSearch = createFile.teamsSplit;
 		root = null;
-		handleRank temp = new handleRank();
-		ratingLookup = temp.teamList;
-		standardDev = handleRank.standardDeviation(ratingLookup);
+		
+		handleRank rankings = new handleRank();
+		ratingLookup = rankings.teamList;
+		standardDev = rankings.standardDev;
+		
+		Teams teams = new Teams();
+		
+		firstRound = teams.westMatchups;
+		System.out.println(firstRound);
+		
+		seedPairing();
+		
 	}
 	/**Method that creates a parent node for two child nodes
 	 * 
@@ -25,7 +41,7 @@ public class Bracket  {
 	 * @return parent Node that is put back into the arraylist that contains all the
 	 * nodes
 	 */
-	public Node addParent(Node seedOne, Node seedTwo) {
+	private Node addParent(Node seedOne, Node seedTwo) {
 		if(seedOne != null && seedTwo != null) {
 			int nextRound = seedOne.round + 1;
 			Node parent = new Node(0, nextRound);
@@ -46,7 +62,7 @@ public class Bracket  {
 	 * @param opponentTeam
 	 * @return probability of teamOne beating teamTwo
 	 */
-	public double headToHead(String teamOne, String teamTwo) {
+	private double headToHead(String teamOne, String teamTwo) {
 		double thisRating = ratingLookup.get(teamOne);
 		double otherRating = ratingLookup.get(teamTwo);
 
@@ -62,7 +78,7 @@ public class Bracket  {
 	 * @param opponentTeam
 	 * 
 	 */
-	public void updateProbability(Node parent) { 
+	private void updateProbability(Node parent) { 
 		Node left = parent.left;
 		Node right = parent.right;
 		for(String team:left.probability.keySet()) {
@@ -110,6 +126,16 @@ public class Bracket  {
 			parent.probability.put(team, newProb*lastRound);
 		}
 	}
+	private String updateName(String name) {
+		if(!nameSearch.contains(name)) {
+			String[] temp = name.split("");
+			
+			for(int i = 0 ; i<temp.length; i ++) {
+				if(nameSearch.contains(temp[i]));
+			}
+		}
+		return name;
+	}
 	/**
 	 * Takes in an array of doubles, sorted by seed, that contain the ratings of each team.
 	 * This method then creates the bracket and updates the probability as well as 
@@ -118,13 +144,13 @@ public class Bracket  {
 	 * @param seeds: contains the ratings of each seed. Each index+1 corresponds to the 
 	 * the team's seed
 	 */
-	public void seedPairing(String[] names) {
+	private void seedPairing() {
 		ArrayList<Node> temp = new ArrayList<Node>();
-		for(int i = 0; i<names.length/2; i++) {
+		for(int i = 0; i<firstRound.size()/2; i++) {
 			Node higher = new Node(i+1, 1);
-			higher.probability.put(names[i], ratingLookup.get(names[i]));
-			Node lower = new Node(names.length-i, 1);
-			lower.probability.put(names[names.length-(i+1)],ratingLookup.get(names[names.length-(i+1)]));
+			higher.probability.put(firstRound.get(i), ratingLookup.get(firstRound.get(i)));
+			Node lower = new Node(firstRound.size()-i, 1);
+			lower.probability.put(firstRound.get(firstRound.size()-(i+1)),ratingLookup.get(firstRound.get(firstRound.size()-(i+1))));
 			temp.add(higher);
 			temp.add(lower);
 		}
@@ -176,6 +202,7 @@ public class Bracket  {
 		printInOrder(currentRoot.left,indentLevel + 1);
 
 	}
+
 	/**Method that searches the tree and returns an array-list of doubles that 
 	 * holds the teams probability of making it to that round. The first entry 
 	 * in the array holds the probability of reaching the Final Four and the last 
@@ -183,7 +210,7 @@ public class Bracket  {
 	 * 
 	 * @param temp: an arraylist of nodes
 	 */
-	public ArrayList<Double> printProbs(String search){
+	private ArrayList<Double> printProbs(String search){
 		ArrayList<Double> rounds = new ArrayList<Double>();
 		searchTree(root, search, rounds);
 		return rounds;
@@ -213,14 +240,7 @@ public class Bracket  {
  * @throws FileNotFoundException
  */
 	public static void main(String[] args) throws FileNotFoundException {
-		String[] seeds = {"Kansas", "Duke", "MichiganSt", "Auburn", "Clemson", "TCU", "RhodeIsland", "SetonHall", "NCState", "Oklahoma", "Syracuse", "NewMexicoSt", "ColCharleston", "Bucknell", "Iona", "Penn"};
 		Bracket bracket = new Bracket();
-		bracket.seedPairing(seeds);
-		for(int i = 0; i < seeds.length; i++) {
-			System.out.println(seeds[i]);
-			System.out.println(bracket.printProbs(seeds[i]));
-
-		}
-		
 	}
+		
 }
