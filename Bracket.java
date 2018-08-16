@@ -1,8 +1,10 @@
 import java.io.FileNotFoundException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -11,28 +13,46 @@ public class Bracket  {
 	private static Node root;
 	private ArrayList<Node> nodes = new ArrayList<Node>(); 
 	private Map<String, Double> ratingLookup = new HashMap<String, Double>();
-	private Map<Integer, String> firstRound;
+	public static Map<Integer, String> firstRound;
 	private double standardDev;
-	private ArrayList<String> nameSearch;
-	
+	private static ArrayList<String> changeFrom;
+	private static ArrayList<String> changeTo;
+
 	public Bracket() throws FileNotFoundException {
 		Data createFile = new Data();
 		Ranking createRanking = new Ranking();
-		
-		nameSearch = createFile.teamsSplit;
+		Teams teamsObject = new Teams();
+
+		changeTo = new ArrayList<String>();
+
+		List<String> masseyTeamNames = List.of("Alabama", "Arizona", "Arkansas", "Auburn", "Bucknell", "Buffalo", 
+				"Butler", "CS Fullerton", "Charleston", "Cincinnati", "Clemson", "Creighton", "Davidson", "Duke", 
+				"Florida", "Florida St", "Georgia St", "Gonzaga", "Houston", "Iona", "Kansas", "Kansas St", 
+				"Kentucky", "Lipscomb", "Loyola Chicago", "Marshall", "Miami FL", "Michigan St", "Michigan", 
+				"Missouri", "Montana", "Murray St", "NC State", "Nevada", "New Mexico St", "North Carolina",
+				"Ohio St", "Oklahoma", "Penn", "Providence", "Purdue", "Radford", "Rhode Island", "SF Austin",
+				"San Diego St", "Seton Hall", "S Dakota St", "St Bonaventure", "Syracuse", "TCU", "Tennessee", 
+				"Texas", "Texas A&M", "TX Southern", "Texas Tech", "UMBC", "UNC Greensboro", "Villanova", 
+				"Virginia", "Virginia Tech", "West Virginia", "Wichita St", "Wright St", "Xavier");
+
+
+		changeFrom = Teams.ncaaNames;
+		changeTo.addAll(masseyTeamNames);
+
+
 		root = null;
-		
+
 		handleRank rankings = new handleRank();
 		ratingLookup = rankings.teamList;
 		standardDev = rankings.standardDev;
-		
-		Teams teams = new Teams();
-		
-		firstRound = teams.westMatchups;
-		System.out.println(firstRound);
-		
+
+
+
+		firstRound = teamsObject.westMatchups;
+
+
 		seedPairing();
-		
+
 	}
 	/**Method that creates a parent node for two child nodes
 	 * 
@@ -126,15 +146,10 @@ public class Bracket  {
 			parent.probability.put(team, newProb*lastRound);
 		}
 	}
-	private String updateName(String name) {
-		if(!nameSearch.contains(name)) {
-			String[] temp = name.split("");
-			
-			for(int i = 0 ; i<temp.length; i ++) {
-				if(nameSearch.contains(temp[i]));
-			}
-		}
-		return name;
+	public static String updateName(String name) {
+		int index = changeFrom.indexOf(name);
+		String newName = changeTo.get(index);
+		return newName.replace(" ", "");
 	}
 	/**
 	 * Takes in an array of doubles, sorted by seed, that contain the ratings of each team.
@@ -148,9 +163,12 @@ public class Bracket  {
 		ArrayList<Node> temp = new ArrayList<Node>();
 		for(int i = 0; i<firstRound.size()/2; i++) {
 			Node higher = new Node(i+1, 1);
-			higher.probability.put(firstRound.get(i), ratingLookup.get(firstRound.get(i)));
+			String higherSeedName = updateName(firstRound.get(i+1));
+			higher.probability.put(higherSeedName, ratingLookup.get(higherSeedName));
+
 			Node lower = new Node(firstRound.size()-i, 1);
-			lower.probability.put(firstRound.get(firstRound.size()-(i+1)),ratingLookup.get(firstRound.get(firstRound.size()-(i+1))));
+			String lowerSeedName = updateName(firstRound.get(firstRound.size()-(i)));
+			lower.probability.put(lowerSeedName,ratingLookup.get(lowerSeedName));
 			temp.add(higher);
 			temp.add(lower);
 		}
@@ -181,28 +199,6 @@ public class Bracket  {
 		}
 	}
 
-	/***
-	 * Private method that prints the tree in bracket form
-	 */
-	private void printTree() {
-		if(root != null) {
-			printInOrder(root, 0);
-		}
-	}
-	private void printInOrder(Node currentRoot, int indentLevel) {
-		if(currentRoot == null) {
-			return;
-		}
-
-		printInOrder(currentRoot.right,indentLevel + 1);
-		for(int i = 0; i < indentLevel; i++) {
-			System.out.print("   ");
-		}
-		System.out.println(currentRoot);
-		printInOrder(currentRoot.left,indentLevel + 1);
-
-	}
-
 	/**Method that searches the tree and returns an array-list of doubles that 
 	 * holds the teams probability of making it to that round. The first entry 
 	 * in the array holds the probability of reaching the Final Four and the last 
@@ -210,12 +206,12 @@ public class Bracket  {
 	 * 
 	 * @param temp: an arraylist of nodes
 	 */
-	private ArrayList<Double> printProbs(String search){
+	public static ArrayList<Double> printProbs(String search){
 		ArrayList<Double> rounds = new ArrayList<Double>();
 		searchTree(root, search, rounds);
 		return rounds;
 	}
-	private void searchTree(Node root, String search, ArrayList<Double>temp) {
+	private static void searchTree(Node root, String search, ArrayList<Double>temp) {
 		if(root.probability.containsKey(search)) {
 			if(root.right == null && root.left == null) {
 				temp.add((root.probability.get(search)));
@@ -230,17 +226,9 @@ public class Bracket  {
 		else {
 			return;
 		}
-
 	}
-/**Note, for teams that have a space in them (i.e. San Diego State), abbreviate this by 
- * writing SanDiegoSt so a null pointer is not thrown 
- * 
- * 
- * @param args
- * @throws FileNotFoundException
- */
+	
 	public static void main(String[] args) throws FileNotFoundException {
 		Bracket bracket = new Bracket();
 	}
-		
 }

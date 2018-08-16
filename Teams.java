@@ -1,6 +1,9 @@
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
+
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -12,6 +15,8 @@ public class Teams{
 	
 	private String bracketSite = "https://www.ncaa.com/interactive-bracket/basketball-men/d1";
 	
+	public static ArrayList<String> ncaaNames;
+	
 	private static Map<Integer, String> getRegionMatchups(Elements gameArea){
 		Map<Integer, String> teamList = new TreeMap<Integer, String>();
 
@@ -22,10 +27,13 @@ public class Teams{
 
 			String topCellName = topCell.select("div.team-name").text();
 			int topCellSeed = Integer.parseInt(topCell.select("div.team-seed").text());
+			ncaaNames.add(topCellName);
+			
 
 			String bottomCellName = bottomCell.select("div.team-name").text();
 			int bottomCellSeed = Integer.parseInt(bottomCell.select("div.team-seed").text());
-
+			ncaaNames.add(bottomCellName);
+			
 			teamList.put(topCellSeed, topCellName);
 			teamList.put(bottomCellSeed, bottomCellName);
 		}
@@ -33,6 +41,7 @@ public class Teams{
 
 	}
 	public Teams() {
+		ncaaNames = new ArrayList<String>();
 		Document doc;
 		try {
 			doc = Jsoup.connect(bracketSite).get();
@@ -55,6 +64,8 @@ public class Teams{
 			System.out.println("IOException: " + e.getMessage());
 			e.printStackTrace();
 		}
+		Collections.sort(ncaaNames);
+		
 		
 		System.out.println("Created round matchups for each region.");
 	}
